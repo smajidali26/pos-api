@@ -4,11 +4,17 @@ using POSApi.Application;
 using POSApi.Infrastructure;
 using POSApi.Infrastructure.Persistence;
 using POSApi.Infrastructure.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Serialize enums as strings instead of numbers
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -73,22 +79,23 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Add CORS for development
+// Add CORS for development with credentials support (required for httpOnly cookies)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Development", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:3000") // Frontend dev URLs
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // Required for httpOnly cookies
     });
-    
+
     options.AddPolicy("Production", policy =>
     {
         policy.WithOrigins("https://yourfrontendapp.com") // Replace with your frontend URL
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials(); // Required for httpOnly cookies
     });
 });
 
@@ -140,14 +147,20 @@ using (var scope = app.Services.CreateScope())
         
         if (app.Environment.IsDevelopment())
         {
-            // In development, use EnsureCreated for simplicity
-            // This will create the database with all current model entities
-            logger.LogInformation("Development environment: Creating database schema from current model...");
-            
-            // Delete and recreate database to ensure it matches current model
-            await context.Database.EnsureDeletedAsync();
+            // In development, drop and recreate database to apply schema changes
+            logger.LogInformation("Development environment: Recreating database with latest schema...");
+
+            var databaseExists = await context.Database.CanConnectAsync();
+
+            if (databaseExists)
+            {
+                logger.LogInformation("Dropping existing database to apply schema changes...");
+                await context.Database.EnsureDeletedAsync();
+                logger.LogInformation("Database dropped successfully");
+            }
+
+            logger.LogInformation("Creating database schema from current model...");
             await context.Database.EnsureCreatedAsync();
-            
             logger.LogInformation("Database schema created successfully from current model");
         }
         else

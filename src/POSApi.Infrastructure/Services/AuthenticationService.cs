@@ -159,8 +159,8 @@ public class AuthenticationService : IAuthenticationService
 
             // Update password
             var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            user.ChangePassword(newPasswordHash);
-            
+            user.UpdatePassword(newPasswordHash);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Password changed for user: {UserId}", userId);

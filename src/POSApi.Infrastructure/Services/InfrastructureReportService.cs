@@ -34,7 +34,7 @@ public class InfrastructureReportService : IInfrastructureReportService
             TotalSales = completedOrders.Sum(o => o.TotalAmount),
             TotalTax = completedOrders.Sum(o => o.TaxAmount),
             TotalDiscounts = completedOrders.Sum(o => o.DiscountAmount),
-            NetSales = completedOrders.Sum(o => o.SubTotal)
+            NetSales = completedOrders.Sum(o => o.SubtotalAmount)
         };
 
         // Payment method breakdown
@@ -233,22 +233,22 @@ public class InfrastructureReportService : IInfrastructureReportService
             ===============================================
             
             SALES PERFORMANCE:
-            • Total Orders: {salesReport.TotalOrders}
-            • Total Sales: {salesReport.TotalSales:C}
-            • Net Sales: {salesReport.NetSales:C}
-            • Average Order Value: {(salesReport.TotalOrders > 0 ? salesReport.TotalSales / salesReport.TotalOrders : 0):C}
+            ï¿½ Total Orders: {salesReport.TotalOrders}
+            ï¿½ Total Sales: {salesReport.TotalSales:C}
+            ï¿½ Net Sales: {salesReport.NetSales:C}
+            ï¿½ Average Order Value: {(salesReport.TotalOrders > 0 ? salesReport.TotalSales / salesReport.TotalOrders : 0):C}
             
             TOP PERFORMING PRODUCTS:
-            {string.Join("\n", salesReport.TopSellingProducts.Take(5).Select(p => $"• {p.ProductName}: {p.QuantitySold} units, {p.TotalRevenue:C}"))}
+            {string.Join("\n", salesReport.TopSellingProducts.Take(5).Select(p => $"ï¿½ {p.ProductName}: {p.QuantitySold} units, {p.TotalRevenue:C}"))}
             
             INVENTORY STATUS:
-            • Total Products: {inventoryReport.TotalProducts}
-            • Low Stock Items: {inventoryReport.LowStockProducts}
-            • Out of Stock Items: {inventoryReport.OutOfStockProducts}
-            • Total Inventory Value: {inventoryReport.TotalInventoryValue:C}
+            ï¿½ Total Products: {inventoryReport.TotalProducts}
+            ï¿½ Low Stock Items: {inventoryReport.LowStockProducts}
+            ï¿½ Out of Stock Items: {inventoryReport.OutOfStockProducts}
+            ï¿½ Total Inventory Value: {inventoryReport.TotalInventoryValue:C}
             
             CASHIER PERFORMANCE:
-            {string.Join("\n", salesReport.CashierPerformance.Select(c => $"• {c.CashierName}: {c.OrdersProcessed} orders, {c.TotalSales:C}"))}
+            {string.Join("\n", salesReport.CashierPerformance.Select(c => $"ï¿½ {c.CashierName}: {c.OrdersProcessed} orders, {c.TotalSales:C}"))}
             """;
 
         return summary;

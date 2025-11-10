@@ -56,10 +56,33 @@ public class AuthController : ControllerBase
                 });
             }
 
+            // Set httpOnly cookies for secure token storage
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,  // Cannot be accessed by JavaScript (XSS protection)
+                Secure = true,    // Only sent over HTTPS (set to true in production)
+                SameSite = SameSiteMode.Strict, // CSRF protection
+                Expires = result.TokenExpiration // Match token expiration
+            };
+
+            // Set auth token cookie
+            Response.Cookies.Append("authToken", result.Token!, cookieOptions);
+
+            // For refresh token support, set a longer-lived refresh token cookie
+            // (If you implement refresh tokens later, use a longer expiration)
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(7) // 7 days for refresh
+            };
+            Response.Cookies.Append("refreshToken", result.Token!, refreshCookieOptions);
+
             var response = new LoginResponse
             {
                 IsSuccess = true,
-                Token = result.Token,
+                Token = result.Token, // Still include for backward compatibility during migration
                 TokenExpiration = result.TokenExpiration,
                 User = new UserInfo
                 {
@@ -178,6 +201,10 @@ public class AuthController : ControllerBase
                 await _authenticationService.LogoutAsync(_currentUserService.UserId.Value, cancellationToken);
             }
 
+            // Clear httpOnly cookies
+            Response.Cookies.Delete("authToken");
+            Response.Cookies.Delete("refreshToken");
+
             return Ok(new { message = "Logged out successfully" });
         }
         catch (Exception ex)
@@ -272,28 +299,48 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Validate JWT token
+    /// Validate JWT token (supports both cookie and body-based token)
     /// </summary>
     [HttpPost("validate-token")]
     [AllowAnonymous]
-    public async Task<ActionResult<TokenValidationResponse>> ValidateToken([FromBody] TokenValidationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<TokenValidationResponse>> ValidateToken([FromBody] TokenValidationRequest? request, CancellationToken cancellationToken)
     {
         try
         {
-            var isValid = await _authenticationService.ValidateTokenAsync(request.Token, cancellationToken);
-            
-            if (!isValid)
+            // Try to get token from cookie first, then from request body
+            string? token = null;
+            if (Request.Cookies.TryGetValue("authToken", out var cookieToken))
             {
-                return Ok(new TokenValidationResponse 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Invalid or expired token" 
+                token = cookieToken;
+            }
+            else if (request?.Token != null)
+            {
+                token = request.Token;
+            }
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return Ok(new TokenValidationResponse
+                {
+                    IsValid = false,
+                    ErrorMessage = "No token provided"
                 });
             }
 
-            var userId = _jwtTokenService.GetUserIdFromToken(request.Token);
-            var tokenExpiration = _jwtTokenService.GetTokenExpiration(request.Token);
-            
+            var isValid = await _authenticationService.ValidateTokenAsync(token, cancellationToken);
+
+            if (!isValid)
+            {
+                return Ok(new TokenValidationResponse
+                {
+                    IsValid = false,
+                    ErrorMessage = "Invalid or expired token"
+                });
+            }
+
+            var userId = _jwtTokenService.GetUserIdFromToken(token);
+            var tokenExpiration = _jwtTokenService.GetTokenExpiration(token);
+
             UserInfo? userInfo = null;
             if (Guid.TryParse(userId, out var userGuid))
             {
@@ -317,9 +364,9 @@ public class AuthController : ControllerBase
                 }
             }
 
-            return Ok(new TokenValidationResponse 
-            { 
-                IsValid = true, 
+            return Ok(new TokenValidationResponse
+            {
+                IsValid = true,
                 User = userInfo,
                 TokenExpiration = tokenExpiration
             });
@@ -327,10 +374,10 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating token");
-            return StatusCode(500, new TokenValidationResponse 
-            { 
-                IsValid = false, 
-                ErrorMessage = "An error occurred while validating token" 
+            return StatusCode(500, new TokenValidationResponse
+            {
+                IsValid = false,
+                ErrorMessage = "An error occurred while validating token"
             });
         }
     }
@@ -416,10 +463,30 @@ public class AuthController : ControllerBase
             var newToken = _jwtTokenService.GenerateToken(user);
             var tokenExpiration = _jwtTokenService.GetTokenExpiration(newToken);
 
+            // Update httpOnly cookies with new token
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = tokenExpiration
+            };
+
+            Response.Cookies.Append("authToken", newToken, cookieOptions);
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("refreshToken", newToken, refreshCookieOptions);
+
             var response = new LoginResponse
             {
                 IsSuccess = true,
-                Token = newToken,
+                Token = newToken, // Still include for backward compatibility
                 TokenExpiration = tokenExpiration,
                 User = new UserInfo
                 {

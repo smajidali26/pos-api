@@ -99,8 +99,8 @@ public class UserInfo
 
 public class TokenValidationRequest
 {
-    [Required]
-    public string Token { get; set; } = string.Empty;
+    // Token is optional - can come from cookie or request body
+    public string? Token { get; set; }
 }
 
 public class TokenValidationResponse

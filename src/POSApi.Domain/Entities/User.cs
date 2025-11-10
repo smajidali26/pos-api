@@ -40,7 +40,7 @@ public class User : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void ChangePassword(string newPasswordHash)
+    public void UpdatePassword(string newPasswordHash)
     {
         PasswordHash = newPasswordHash;
         SetUpdatedAt();

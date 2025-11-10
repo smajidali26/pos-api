@@ -8,6 +8,7 @@ public class CreateProductCommand : ICommand<Guid>
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public Guid? SizeId { get; set; }
     public string SKU { get; set; } = string.Empty;
     public string Barcode { get; set; } = string.Empty;
     public decimal Price { get; set; }
@@ -15,6 +16,7 @@ public class CreateProductCommand : ICommand<Guid>
     public int StockQuantity { get; set; }
     public int MinStockLevel { get; set; }
     public Guid CategoryId { get; set; }
+    public Guid? PrimaryVendorId { get; set; }
 
     // Unit of Measure Properties
     public string BaseUnitCode { get; set; } = "PCS"; // Default to pieces

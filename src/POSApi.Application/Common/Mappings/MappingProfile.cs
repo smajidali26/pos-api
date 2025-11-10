@@ -11,6 +11,7 @@ public class MappingProfile : Profile
         // Product mappings
         CreateMap<Product, ProductDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+            .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.Size != null ? src.Size.Name : null))
             .ForMember(dest => dest.PrimaryVendorName, opt => opt.MapFrom(src => src.PrimaryVendor != null ? src.PrimaryVendor.Name : null))
             .ForMember(dest => dest.TotalBaseUnitQuantity, opt => opt.MapFrom(src => src.GetTotalBaseUnitQuantity()))
             .ForMember(dest => dest.StockDisplayString, opt => opt.MapFrom(src => src.GetStockDisplayString()))
@@ -26,6 +27,7 @@ public class MappingProfile : Profile
 
         CreateMap<ProductDto, Product>()
             .ForMember(dest => dest.Category, opt => opt.Ignore())
+            .ForMember(dest => dest.Size, opt => opt.Ignore())
             .ForMember(dest => dest.PrimaryVendor, opt => opt.Ignore())
             .ForMember(dest => dest.Unit, opt => opt.Ignore());
 

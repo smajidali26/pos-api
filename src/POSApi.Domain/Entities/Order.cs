@@ -9,12 +9,15 @@ public class Order : AggregateRoot
     public Guid? CustomerId { get; private set; }
     public Customer? Customer { get; private set; }
     public DateTime OrderDate { get; private set; }
-    public decimal SubTotal { get; private set; }
+    public decimal SubtotalAmount { get; private set; }  // Renamed from SubTotal for consistency
     public decimal TaxAmount { get; private set; }
     public decimal DiscountAmount { get; private set; }
     public decimal TotalAmount { get; private set; }
     public OrderStatus Status { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; }
+    public decimal? CashAmount { get; private set; }  // Added for receipt
+    public decimal? CardAmount { get; private set; }  // Added for receipt
+    public decimal? ChangeAmount { get; private set; }  // Added for receipt
     public string? Notes { get; private set; }
     public Guid CashierId { get; private set; }
     public User Cashier { get; private set; } = null!;
@@ -87,10 +90,13 @@ public class Order : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void Complete(PaymentMethod paymentMethod, string? notes = null)
+    public void Complete(PaymentMethod paymentMethod, string? notes = null, decimal? cashAmount = null, decimal? cardAmount = null, decimal? changeAmount = null)
     {
         PaymentMethod = paymentMethod;
         Notes = notes;
+        CashAmount = cashAmount;
+        CardAmount = cardAmount;
+        ChangeAmount = changeAmount;
         Status = OrderStatus.Completed;
         SetUpdatedAt();
 
@@ -106,11 +112,76 @@ public class Order : AggregateRoot
         AddDomainEvent(new OrderCancelledEvent(Id, OrderNumber, reason));
     }
 
+    public void Refund(string? reason = null)
+    {
+        if (Status != OrderStatus.Completed)
+        {
+            throw new InvalidOperationException("Only completed orders can be refunded");
+        }
+
+        Status = OrderStatus.Refunded;
+        if (!string.IsNullOrEmpty(reason))
+        {
+            Notes = string.IsNullOrEmpty(Notes) ? $"Refund: {reason}" : $"{Notes}\nRefund: {reason}";
+        }
+        SetUpdatedAt();
+
+        AddDomainEvent(new OrderCancelledEvent(Id, OrderNumber, reason ?? "Order refunded"));
+    }
+
+    public void PartialRefund(List<(Guid orderItemId, int quantityRefunded)> refundedItems, string? reason = null)
+    {
+        if (Status != OrderStatus.Completed)
+        {
+            throw new InvalidOperationException("Only completed orders can be refunded");
+        }
+
+        // Process each refunded item
+        foreach (var (orderItemId, quantityRefunded) in refundedItems)
+        {
+            var item = OrderItems.FirstOrDefault(x => x.Id == orderItemId);
+            if (item == null)
+            {
+                throw new InvalidOperationException($"Order item {orderItemId} not found");
+            }
+
+            if (quantityRefunded > item.Quantity)
+            {
+                throw new InvalidOperationException($"Cannot refund more than ordered quantity for item {orderItemId}");
+            }
+
+            // Reduce quantity or remove item
+            if (quantityRefunded == item.Quantity)
+            {
+                OrderItems.Remove(item);
+            }
+            else
+            {
+                item.UpdateQuantity(item.Quantity - quantityRefunded);
+            }
+        }
+
+        RecalculateTotal();
+
+        // Check if all items are refunded
+        if (!OrderItems.Any() || TotalAmount == 0)
+        {
+            Status = OrderStatus.Refunded;
+        }
+
+        if (!string.IsNullOrEmpty(reason))
+        {
+            Notes = string.IsNullOrEmpty(Notes) ? $"Partial Refund: {reason}" : $"{Notes}\nPartial Refund: {reason}";
+        }
+
+        SetUpdatedAt();
+    }
+
     private void RecalculateTotal()
     {
-        SubTotal = OrderItems.Sum(x => x.TotalPrice);
-        TaxAmount = SubTotal * 0.08m; // 8% tax rate - this could be configurable
-        TotalAmount = SubTotal + TaxAmount - DiscountAmount;
+        SubtotalAmount = OrderItems.Sum(x => x.TotalPrice);
+        TaxAmount = 0; // No tax applied
+        TotalAmount = SubtotalAmount + TaxAmount - DiscountAmount;
     }
 }
 

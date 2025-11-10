@@ -68,9 +68,25 @@ public static class DependencyInjection
                 RequireExpirationTime = true
             };
 
-            // Optional: Add custom events for better error handling
+            // Custom events for cookie-based authentication
             options.Events = new JwtBearerEvents
             {
+                // Read JWT token from httpOnly cookie instead of Authorization header
+                OnMessageReceived = context =>
+                {
+                    // First check Authorization header (for backward compatibility)
+                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                    {
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                    // If no Authorization header, check cookie
+                    else if (context.Request.Cookies.TryGetValue("authToken", out var token))
+                    {
+                        context.Token = token;
+                    }
+                    return Task.CompletedTask;
+                },
                 OnAuthenticationFailed = context =>
                 {
                     if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
@@ -117,6 +133,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<ISizeRepository, SizeRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
@@ -124,7 +141,7 @@ public static class DependencyInjection
         services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
         services.AddScoped<IReturnRepository, ReturnRepository>();
         services.AddScoped<IPromotionRepository, PromotionRepository>();
-        
+
         // Unit of Measure repositories
         services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
         services.AddScoped<IUnitOfMeasureRepository, UnitOfMeasureRepository>();
@@ -141,6 +158,9 @@ public static class DependencyInjection
         services.AddScoped<IReceiptService, ReceiptService>();
         services.AddScoped<IInfrastructureReportService, InfrastructureReportService>();
         services.AddScoped<Services.DataSeeder>();
+
+        // Payment Services
+        services.AddScoped<IPaymentGatewayService, StripePaymentService>();
 
         // Domain Event Handlers
         services.AddScoped<IDomainEventHandler<LowStockAlertEvent>, LowStockAlertHandler>();

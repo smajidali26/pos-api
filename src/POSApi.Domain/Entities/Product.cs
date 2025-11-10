@@ -7,6 +7,8 @@ public class Product : AggregateRoot
 {
     public string Name { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
+    public Guid? SizeId { get; private set; }
+    public Size? Size { get; private set; }
     public string SKU { get; private set; } = string.Empty;
     public string Barcode { get; private set; } = string.Empty;
     public decimal Price { get; private set; }
@@ -31,12 +33,13 @@ public class Product : AggregateRoot
 
     private Product() { } // For EF Core
 
-    public Product(string name, string description, string sku, string barcode, 
-                  decimal price, decimal cost, int stockQuantity, int minStockLevel, 
-                  Guid categoryId, int reorderLevel = 0, int reorderQuantity = 0)
+    public Product(string name, string description, string sku, string barcode,
+                  decimal price, decimal cost, int stockQuantity, int minStockLevel,
+                  Guid categoryId, Guid? sizeId = null, int reorderLevel = 0, int reorderQuantity = 0)
     {
         Name = name;
         Description = description;
+        SizeId = sizeId;
         SKU = sku;
         Barcode = barcode;
         Price = price;
@@ -172,10 +175,11 @@ public class Product : AggregateRoot
         SetUpdatedAt();
     }
 
-    public void UpdateBasicInfo(string name, string description)
+    public void UpdateBasicInfo(string name, string description, Guid? sizeId = null)
     {
         Name = name;
         Description = description;
+        SizeId = sizeId;
         SetUpdatedAt();
     }
 

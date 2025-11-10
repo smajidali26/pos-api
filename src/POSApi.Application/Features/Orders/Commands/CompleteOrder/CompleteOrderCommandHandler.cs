@@ -25,7 +25,7 @@ public class CompleteOrderCommandHandler : ICommandHandler<CompleteOrderCommand>
             throw new InvalidOperationException($"Order {order.OrderNumber} is not in pending status");
         }
 
-        order.Complete(request.PaymentMethod, request.Notes);
+        order.Complete(request.PaymentMethod, request.Notes, request.CashAmount, request.CardAmount, request.ChangeAmount);
 
         // Add loyalty points if customer exists (1 point per dollar spent)
         if (order.Customer != null)
