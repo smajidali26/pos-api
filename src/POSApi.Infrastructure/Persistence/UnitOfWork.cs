@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork
 
     private IProductRepository? _products;
     private ICategoryRepository? _categories;
+    private ISizeRepository? _sizes;
     private ICustomerRepository? _customers;
     private IOrderRepository? _orders;
     private IUserRepository? _users;
@@ -21,7 +22,7 @@ public class UnitOfWork : IUnitOfWork
     private IPurchaseOrderRepository? _purchaseOrders;
     private IReturnRepository? _returns;
     private IPromotionRepository? _promotions;
-    
+
     // Unit of Measure repositories
     private IUnitTypeRepository? _unitTypes;
     private IUnitOfMeasureRepository? _unitsOfMeasure;
@@ -35,6 +36,7 @@ public class UnitOfWork : IUnitOfWork
 
     public IProductRepository Products => _products ??= new ProductRepository(_context);
     public ICategoryRepository Categories => _categories ??= new CategoryRepository(_context);
+    public ISizeRepository Sizes => _sizes ??= new SizeRepository(_context);
     public ICustomerRepository Customers => _customers ??= new CustomerRepository(_context);
     public IOrderRepository Orders => _orders ??= new OrderRepository(_context);
     public IUserRepository Users => _users ??= new UserRepository(_context);
@@ -42,7 +44,7 @@ public class UnitOfWork : IUnitOfWork
     public IPurchaseOrderRepository PurchaseOrders => _purchaseOrders ??= new PurchaseOrderRepository(_context);
     public IReturnRepository Returns => _returns ??= new ReturnRepository(_context);
     public IPromotionRepository Promotions => _promotions ??= new PromotionRepository(_context);
-    
+
     // Unit of Measure repositories
     public IUnitTypeRepository UnitTypes => _unitTypes ??= new UnitTypeRepository(_context);
     public IUnitOfMeasureRepository UnitsOfMeasure => _unitsOfMeasure ??= new UnitOfMeasureRepository(_context);

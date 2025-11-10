@@ -9,6 +9,9 @@ public class CompleteOrderCommand : ICommand
     public Guid OrderId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public string? Notes { get; set; }
+    public decimal? CashAmount { get; set; }
+    public decimal? CardAmount { get; set; }
+    public decimal? ChangeAmount { get; set; }
 }
 
 public class CompleteOrderCommandValidator : AbstractValidator<CompleteOrderCommand>

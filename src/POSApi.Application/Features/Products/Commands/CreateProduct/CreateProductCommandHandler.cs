@@ -22,6 +22,16 @@ public class CreateProductCommandHandler : ICommandHandler<CreateProductCommand,
             throw new InvalidOperationException($"Category with ID {request.CategoryId} not found");
         }
 
+        // Validate size exists (if provided)
+        if (request.SizeId.HasValue)
+        {
+            var size = await _unitOfWork.Sizes.GetByIdAsync(request.SizeId.Value, cancellationToken);
+            if (size == null)
+            {
+                throw new InvalidOperationException($"Size with ID {request.SizeId} not found");
+            }
+        }
+
         // Validate SKU is unique
         var existingProduct = await _unitOfWork.Products.GetBySkuAsync(request.SKU, cancellationToken);
         if (existingProduct != null)
@@ -56,7 +66,18 @@ public class CreateProductCommandHandler : ICommandHandler<CreateProductCommand,
             request.Cost,
             request.StockQuantity,
             request.MinStockLevel,
-            request.CategoryId);
+            request.CategoryId,
+            request.SizeId);
+
+        // Set vendor if provided
+        if (request.PrimaryVendorId.HasValue)
+        {
+            var vendor = await _unitOfWork.Vendors.GetByIdAsync(request.PrimaryVendorId.Value, cancellationToken);
+            if (vendor != null)
+            {
+                product.SetPrimaryVendor(request.PrimaryVendorId.Value);
+            }
+        }
 
         // Add product first to get the ID
         await _unitOfWork.Products.AddAsync(product, cancellationToken);

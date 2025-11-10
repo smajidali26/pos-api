@@ -8,10 +8,12 @@ public class UpdateProductCommand : ICommand
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public Guid? SizeId { get; set; }
     public decimal Price { get; set; }
     public decimal Cost { get; set; }
     public int MinStockLevel { get; set; }
     public Guid CategoryId { get; set; }
+    public Guid? PrimaryVendorId { get; set; }
 }
 
 public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>

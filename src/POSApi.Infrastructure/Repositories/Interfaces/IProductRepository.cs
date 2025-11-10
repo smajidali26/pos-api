@@ -8,6 +8,7 @@ public interface IProductRepository : IRepository<Product>
     Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
     Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Product>> GetBySizeIdAsync(Guid sizeId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> SearchProductsAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetActiveProductsAsync(CancellationToken cancellationToken = default);

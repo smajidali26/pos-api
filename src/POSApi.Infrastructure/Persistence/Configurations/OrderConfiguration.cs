@@ -16,7 +16,16 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsRequired()
             .HasMaxLength(50);
             
-        builder.Property(o => o.SubTotal)
+        builder.Property(o => o.SubtotalAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.CashAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.CardAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.ChangeAmount)
             .HasPrecision(18, 2);
             
         builder.Property(o => o.TaxAmount)

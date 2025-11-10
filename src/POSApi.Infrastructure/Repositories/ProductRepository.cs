@@ -15,6 +15,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -27,6 +28,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -39,6 +41,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -49,10 +52,26 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Product>> GetBySizeIdAsync(Guid sizeId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(p => p.Category)
+            .Include(p => p.Size)
+            .Include(p => p.Unit!)
+                .ThenInclude(u => u.BaseUnit)
+            .Include(p => p.Unit!)
+                .ThenInclude(u => u.PackagingUnit)
+            .Include(p => p.PrimaryVendor)
+            .Where(p => p.SizeId == sizeId)
+            .OrderBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Product>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -68,6 +87,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         var query = _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -95,6 +115,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -109,6 +130,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -124,6 +146,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -135,16 +158,17 @@ public class ProductRepository : Repository<Product>, IProductRepository
     }
 
     public async Task<(IEnumerable<Product> Products, int TotalCount)> GetProductsPagedAsync(
-        int skip, 
-        int take, 
-        string? searchTerm = null, 
-        Guid? categoryId = null, 
-        bool? isActive = null, 
-        bool? isLowStock = null, 
+        int skip,
+        int take,
+        string? searchTerm = null,
+        Guid? categoryId = null,
+        bool? isActive = null,
+        bool? isLowStock = null,
         CancellationToken cancellationToken = default)
     {
         var query = _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)
@@ -199,6 +223,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit!)
                     .ThenInclude(bu => bu.UnitType)
@@ -217,6 +242,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         return await _dbSet
             .Include(p => p.Category)
+            .Include(p => p.Size)
             .Include(p => p.Unit!)
                 .ThenInclude(u => u.BaseUnit)
             .Include(p => p.Unit!)

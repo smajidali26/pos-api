@@ -15,6 +15,7 @@ public class PosDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Size> Sizes => Set<Size>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -28,7 +29,7 @@ public class PosDbContext : DbContext
     public DbSet<PromotionProduct> PromotionProducts => Set<PromotionProduct>();
     public DbSet<PromotionCategory> PromotionCategories => Set<PromotionCategory>();
     public DbSet<PromotionUsage> PromotionUsages => Set<PromotionUsage>();
-    
+
     // Unit of Measure entities
     public DbSet<UnitType> UnitTypes => Set<UnitType>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();

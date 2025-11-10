@@ -53,12 +53,15 @@ public class ReceiptService : IReceiptService
 
         receipt += $"""
             ================================
-            Subtotal: ${order.SubTotal:F2}
+            Subtotal: ${order.SubtotalAmount:F2}
             Tax: ${order.TaxAmount:F2}
             {(order.DiscountAmount > 0 ? $"Discount: -${order.DiscountAmount:F2}" : "")}
             Total: ${order.TotalAmount:F2}
-            
+
             Payment Method: {order.PaymentMethod}
+            {(order.CashAmount.HasValue ? $"Cash: ${order.CashAmount.Value:F2}" : "")}
+            {(order.CardAmount.HasValue ? $"Card: ${order.CardAmount.Value:F2}" : "")}
+            {(order.ChangeAmount.HasValue ? $"Change: ${order.ChangeAmount.Value:F2}" : "")}
             ================================
             Thank you for your business!
             ================================

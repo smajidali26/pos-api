@@ -46,6 +46,7 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
         return await _dbSet
             .Include(c => c.ParentCategory)
             .Include(c => c.SubCategories)
+            .Include(c => c.Products)
             .ToListAsync(cancellationToken);
     }
 }

@@ -33,6 +33,9 @@ public class DataSeeder
             // Seed categories
             await SeedCategoriesAsync();
 
+            // Seed sizes
+            await SeedSizesAsync();
+
             // Seed vendors
             await SeedVendorsAsync();
 
@@ -160,8 +163,39 @@ public class DataSeeder
 
         await _context.Categories.AddRangeAsync(categories);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Seeded {Count} categories", categories.Length);
+    }
+
+    private async Task SeedSizesAsync()
+    {
+        if (await _context.Sizes.AnyAsync())
+        {
+            _logger.LogInformation("Sizes already exist, skipping size seeding");
+            return;
+        }
+
+        var sizes = new[]
+        {
+            new Size("Small", "Small size"),
+            new Size("Medium", "Medium size"),
+            new Size("Large", "Large size"),
+            new Size("X-Large", "Extra large size"),
+            new Size("XX-Large", "Double extra large size"),
+            new Size("One Size", "One size fits all"),
+            new Size("500g", "500 grams"),
+            new Size("1KG", "1 kilogram"),
+            new Size("2KG", "2 kilograms"),
+            new Size("500ml", "500 milliliters"),
+            new Size("1L", "1 liter"),
+            new Size("2L", "2 liters"),
+            new Size("32x34", "Waist 32, Length 34")
+        };
+
+        await _context.Sizes.AddRangeAsync(sizes);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Seeded {Count} sizes", sizes.Length);
     }
 
     private async Task SeedVendorsAsync()
@@ -219,6 +253,7 @@ public class DataSeeder
 
         var categories = await _context.Categories.ToListAsync();
         var vendors = await _context.Vendors.ToListAsync();
+        var sizes = await _context.Sizes.ToListAsync();
         var pcsUnit = await _context.UnitsOfMeasure.FirstAsync(u => u.Code == "PCS");
 
         var electronicsCategory = categories.First(c => c.Name == "Electronics");
@@ -228,25 +263,31 @@ public class DataSeeder
         var fashionVendor = vendors.First(v => v.Name == "FashionPlus");
         var foodVendor = vendors.First(v => v.Name == "FoodSupply");
 
+        // Get size references
+        var xlSize = sizes.FirstOrDefault(s => s.Name == "X-Large");
+        var size32x34 = sizes.FirstOrDefault(s => s.Name == "32x34");
+        var size1kg = sizes.FirstOrDefault(s => s.Name == "1KG");
+        var size500g = sizes.FirstOrDefault(s => s.Name == "500g");
+
         var products = new[]
         {
-            new Product("Wireless Mouse", "Ergonomic wireless mouse with USB receiver", 
-                "WM001", "123456789012", 29.99m, 15.00m, 100, 10, electronicsCategory.Id, 15, 50),
-            
-            new Product("Bluetooth Keyboard", "Wireless Bluetooth keyboard", 
-                "KB001", "123456789013", 79.99m, 40.00m, 50, 5, electronicsCategory.Id, 10, 25),
-            
-            new Product("Cotton T-Shirt", "100% cotton casual t-shirt", 
-                "TS001", "123456789014", 19.99m, 8.00m, 200, 20, clothingCategory.Id, 30, 100),
-            
-            new Product("Jeans", "Classic denim jeans", 
-                "JN001", "123456789015", 49.99m, 25.00m, 75, 10, clothingCategory.Id, 15, 50),
-            
-            new Product("Organic Coffee", "Premium organic coffee beans", 
-                "CF001", "123456789016", 12.99m, 6.00m, 150, 15, foodCategory.Id, 25, 100),
-            
-            new Product("Green Tea", "Organic green tea leaves", 
-                "GT001", "123456789017", 8.99m, 4.00m, 100, 10, foodCategory.Id, 20, 75)
+            new Product("Wireless Mouse", "Ergonomic wireless mouse with USB receiver",
+                "WM001", "123456789012", 29.99m, 15.00m, 100, 10, electronicsCategory.Id, null, 15, 50),
+
+            new Product("Bluetooth Keyboard", "Wireless Bluetooth keyboard",
+                "KB001", "123456789013", 79.99m, 40.00m, 50, 5, electronicsCategory.Id, null, 10, 25),
+
+            new Product("Cotton T-Shirt", "100% cotton casual t-shirt",
+                "TS001", "123456789014", 19.99m, 8.00m, 200, 20, clothingCategory.Id, xlSize?.Id, 30, 100),
+
+            new Product("Jeans", "Classic denim jeans",
+                "JN001", "123456789015", 49.99m, 25.00m, 75, 10, clothingCategory.Id, size32x34?.Id, 15, 50),
+
+            new Product("Organic Coffee", "Premium organic coffee beans",
+                "CF001", "123456789016", 12.99m, 6.00m, 150, 15, foodCategory.Id, size1kg?.Id, 25, 100),
+
+            new Product("Green Tea", "Organic green tea leaves",
+                "GT001", "123456789017", 8.99m, 4.00m, 100, 10, foodCategory.Id, size500g?.Id, 20, 75)
         };
 
         // Set vendors for products

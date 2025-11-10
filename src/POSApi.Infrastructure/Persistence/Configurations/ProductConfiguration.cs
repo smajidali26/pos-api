@@ -18,7 +18,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             
         builder.Property(p => p.Description)
             .HasMaxLength(1000);
-            
+
         builder.Property(p => p.SKU)
             .IsRequired()
             .HasMaxLength(50);
@@ -56,7 +56,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
-            
+
+        builder.HasOne(p => p.Size)
+            .WithMany(s => s.Products)
+            .HasForeignKey(p => p.SizeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(p => p.PrimaryVendor)
             .WithMany(v => v.Products)
             .HasForeignKey(p => p.PrimaryVendorId)

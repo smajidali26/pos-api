@@ -40,7 +40,7 @@ public class GetDailySalesReportQueryHandler : IQueryHandler<GetDailySalesReport
             TotalSales = completedOrders.Sum(o => o.TotalAmount),
             TotalTax = completedOrders.Sum(o => o.TaxAmount),
             TotalDiscounts = completedOrders.Sum(o => o.DiscountAmount),
-            NetSales = completedOrders.Sum(o => o.SubTotal)
+            NetSales = completedOrders.Sum(o => o.SubtotalAmount)
         };
 
         // Payment method breakdown
