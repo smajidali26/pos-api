@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using POSApi.Application.Common.DTOs;
+using POSApi.Application.Common.DTOs.Requests;
 using POSApi.Application.Features.Orders.Commands.CompleteOrder;
 using POSApi.Application.Features.Orders.Commands.CreateOrder;
 using POSApi.Application.Features.Orders.Commands.RefundOrderItems;
@@ -165,22 +166,4 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-}
-
-public class CompleteOrderRequest
-{
-    public POSApi.Domain.Entities.PaymentMethod PaymentMethod { get; set; }
-    public string? Notes { get; set; }
-}
-
-public class RefundOrderItemsRequest
-{
-    public List<RefundItemRequest> Items { get; set; } = new();
-    public string? Reason { get; set; }
-}
-
-public class RefundItemRequest
-{
-    public Guid OrderItemId { get; set; }
-    public int QuantityToRefund { get; set; }
 }

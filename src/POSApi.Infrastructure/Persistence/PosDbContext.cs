@@ -60,6 +60,22 @@ public class PosDbContext : DbContext
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<StoreUser> StoreUsers => Set<StoreUser>();
     public DbSet<StoreProduct> StoreProducts => Set<StoreProduct>();
+    public DbSet<StoreInventory> StoreInventories => Set<StoreInventory>();
+    public DbSet<InterStoreTransfer> InterStoreTransfers => Set<InterStoreTransfer>();
+    public DbSet<InterStoreTransferItem> InterStoreTransferItems => Set<InterStoreTransferItem>();
+
+    // Analytics entities
+    public DbSet<SalesForecast> SalesForecasts => Set<SalesForecast>();
+    public DbSet<ProductABCClassification> ProductABCClassifications => Set<ProductABCClassification>();
+    public DbSet<InventoryTurnover> InventoryTurnovers => Set<InventoryTurnover>();
+
+    // Loyalty Program entities
+    public DbSet<LoyaltyProgram> LoyaltyPrograms => Set<LoyaltyProgram>();
+    public DbSet<CustomerTier> CustomerTiers => Set<CustomerTier>();
+    public DbSet<CustomerLoyalty> CustomerLoyalties => Set<CustomerLoyalty>();
+    public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
+    public DbSet<Reward> Rewards => Set<Reward>();
+    public DbSet<RewardRedemption> RewardRedemptions => Set<RewardRedemption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

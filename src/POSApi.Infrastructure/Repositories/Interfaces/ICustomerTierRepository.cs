@@ -1,0 +1,10 @@
+using POSApi.Domain.Entities;
+using POSApi.Domain.Repositories;
+
+namespace POSApi.Infrastructure.Repositories.Interfaces;
+
+public interface ICustomerTierRepository : IRepository<CustomerTier>
+{
+    Task<CustomerTier?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+    Task<List<CustomerTier>> GetAllOrderedBySortOrderAsync(CancellationToken cancellationToken = default);
+}

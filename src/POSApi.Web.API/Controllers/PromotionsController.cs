@@ -6,6 +6,7 @@ using POSApi.Application.Features.Promotions.Commands.CalculateDiscount;
 using POSApi.Application.Features.Promotions.Commands.CreatePromotion;
 using POSApi.Application.Features.Promotions.Commands.ValidateCoupon;
 using POSApi.Application.Features.Promotions.Queries.GetActivePromotions;
+using POSApi.Application.Features.Promotions.Queries.GetPromotionAnalytics;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -97,9 +98,14 @@ public class PromotionsController : ControllerBase
     /// Get promotion analytics
     /// </summary>
     [HttpGet("analytics")]
-    public async Task<ActionResult> GetPromotionAnalytics([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken cancellationToken)
+    public async Task<ActionResult<PromotionAnalyticsDto>> GetPromotionAnalytics([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken cancellationToken)
     {
-        // This would need GetPromotionAnalyticsQuery to be implemented
-        return Ok(new { Message = "Promotion analytics endpoint - implementation pending" });
+        var query = new GetPromotionAnalyticsQuery
+        {
+            StartDate = startDate,
+            EndDate = endDate
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 }

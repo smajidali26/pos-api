@@ -28,6 +28,18 @@ public class UnitOfWork : IUnitOfWork
     private IUnitOfMeasureRepository? _unitsOfMeasure;
     private IProductUnitRepository? _productUnits;
 
+    // Multi-Store Management repositories
+    private IStoreRepository? _stores;
+    // TODO: Uncomment when entities are created
+    // private IStoreInventoryRepository? _storeInventories;
+    // private IInterStoreTransferRepository? _interStoreTransfers;
+
+    // Loyalty Program repositories
+    private ILoyaltyProgramRepository? _loyaltyPrograms;
+    private ICustomerTierRepository? _customerTiers;
+    private ICustomerLoyaltyRepository? _customerLoyalties;
+    private IRewardRepository? _rewards;
+
     public UnitOfWork(PosDbContext context, IDomainEventDispatcher domainEventDispatcher)
     {
         _context = context;
@@ -49,6 +61,18 @@ public class UnitOfWork : IUnitOfWork
     public IUnitTypeRepository UnitTypes => _unitTypes ??= new UnitTypeRepository(_context);
     public IUnitOfMeasureRepository UnitsOfMeasure => _unitsOfMeasure ??= new UnitOfMeasureRepository(_context);
     public IProductUnitRepository ProductUnits => _productUnits ??= new ProductUnitRepository(_context);
+
+    // Multi-Store Management repositories
+    public IStoreRepository Stores => _stores ??= new StoreRepository(_context);
+    // TODO: Uncomment when entities are created
+    // public IStoreInventoryRepository StoreInventories => _storeInventories ??= new StoreInventoryRepository(_context);
+    // public IInterStoreTransferRepository InterStoreTransfers => _interStoreTransfers ??= new InterStoreTransferRepository(_context);
+
+    // Loyalty Program repositories
+    public ILoyaltyProgramRepository LoyaltyPrograms => _loyaltyPrograms ??= new LoyaltyProgramRepository(_context);
+    public ICustomerTierRepository CustomerTiers => _customerTiers ??= new CustomerTierRepository(_context);
+    public ICustomerLoyaltyRepository CustomerLoyalties => _customerLoyalties ??= new CustomerLoyaltyRepository(_context);
+    public IRewardRepository Rewards => _rewards ??= new RewardRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

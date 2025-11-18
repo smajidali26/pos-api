@@ -1,0 +1,11 @@
+using POSApi.Domain.Entities;
+using POSApi.Domain.Repositories;
+
+namespace POSApi.Infrastructure.Repositories.Interfaces;
+
+public interface IStoreInventoryRepository : IRepository<StoreInventory>
+{
+    Task<StoreInventory?> GetByStoreAndProductAsync(Guid storeId, Guid productId, CancellationToken cancellationToken = default);
+    Task<List<StoreInventory>> GetByStoreAsync(Guid storeId, CancellationToken cancellationToken = default);
+    Task<List<StoreInventory>> GetLowStockItemsAsync(Guid storeId, CancellationToken cancellationToken = default);
+}

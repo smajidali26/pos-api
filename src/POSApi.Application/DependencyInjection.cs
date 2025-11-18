@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using POSApi.Application.Common.Mappings;
+using POSApi.Application.Common.Services;
 
 namespace POSApi.Application;
 
@@ -18,6 +19,11 @@ public static class DependencyInjection
 
         // FluentValidation
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Advanced Analytics Services
+        services.AddScoped<ISalesForecastingService, SalesForecastingService>();
+        services.AddScoped<IABCAnalysisService, ABCAnalysisService>();
+        services.AddScoped<IInventoryTurnoverService, InventoryTurnoverService>();
 
         return services;
     }

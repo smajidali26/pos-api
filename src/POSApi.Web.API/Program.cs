@@ -4,7 +4,10 @@ using POSApi.Application;
 using POSApi.Infrastructure;
 using POSApi.Infrastructure.Persistence;
 using POSApi.Infrastructure.Services;
+using POSApi.Infrastructure.BackgroundJobs;
 using System.Text.Json.Serialization;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +82,27 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Add Response Caching and Memory Cache
+builder.Services.AddResponseCaching();
+builder.Services.AddMemoryCache();
+
+// Add Hangfire for background jobs
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.Zero,
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true
+    }));
+
+// Add the Hangfire server
+builder.Services.AddHangfireServer();
+
 // Add CORS for development with credentials support (required for httpOnly cookies)
 builder.Services.AddCors(options =>
 {
@@ -126,6 +150,18 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// Response Caching (must be before Authentication)
+app.UseResponseCaching();
+
+// Hangfire Dashboard (only in development for security)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
 
 // Authentication & Authorization (Order is important!)
 app.UseAuthentication();
@@ -220,4 +256,77 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Schedule recurring background jobs
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    logger.LogInformation("Scheduling recurring background jobs...");
+
+    // Analytics Jobs
+    recurringJobManager.AddOrUpdate<IAnalyticsBackgroundJobs>(
+        "daily-sales-forecasts",
+        job => job.GenerateDailySalesForecastsAsync(),
+        "0 2 * * *", // Daily at 2 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<IAnalyticsBackgroundJobs>(
+        "monthly-abc-classification",
+        job => job.RecalculateABCClassificationAsync(),
+        "0 3 1 * *", // Monthly on 1st at 3 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<IAnalyticsBackgroundJobs>(
+        "monthly-inventory-turnover",
+        job => job.CalculateInventoryTurnoverAsync(),
+        "0 4 1 * *", // Monthly on 1st at 4 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<IAnalyticsBackgroundJobs>(
+        "weekly-forecast-cleanup",
+        job => job.CleanupOldForecastsAsync(),
+        "0 1 * * 0", // Weekly on Sunday at 1 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    // Loyalty Jobs
+    recurringJobManager.AddOrUpdate<ILoyaltyBackgroundJobs>(
+        "daily-points-expiry",
+        job => job.ExpirePointsAsync(),
+        "0 1 * * *", // Daily at 1 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<ILoyaltyBackgroundJobs>(
+        "weekly-expiry-notifications",
+        job => job.SendPointsExpiryNotificationsAsync(),
+        "0 9 * * 1", // Weekly on Monday at 9 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<ILoyaltyBackgroundJobs>(
+        "daily-tier-updates",
+        job => job.UpdateCustomerTiersAsync(),
+        "0 5 * * *", // Daily at 5 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    recurringJobManager.AddOrUpdate<ILoyaltyBackgroundJobs>(
+        "monthly-loyalty-report",
+        job => job.GenerateMonthlyLoyaltyReportAsync(),
+        "0 6 1 * *", // Monthly on 1st at 6 AM
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    logger.LogInformation("Background jobs scheduled successfully");
+    logger.LogInformation("Hangfire Dashboard available at: /hangfire (Development only)");
+}
+
 app.Run();
+
+// Hangfire Authorization Filter for Development
+public class HangfireAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
+{
+    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
+    {
+        // Allow all access in development
+        // In production, implement proper authorization
+        return true;
+    }
+}

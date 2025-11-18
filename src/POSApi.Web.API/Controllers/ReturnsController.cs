@@ -2,8 +2,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using POSApi.Application.Common.DTOs;
+using POSApi.Application.Common.DTOs.Requests;
 using POSApi.Application.Features.Returns.Commands.CreateReturn;
+using POSApi.Application.Features.Returns.Commands.ProcessReturn;
 using POSApi.Application.Features.Returns.Queries.GetReturnById;
+using POSApi.Application.Features.Returns.Queries.GetReturnsByOrder;
 using POSApi.Domain.Entities;
 
 namespace POSApi.Web.API.Controllers;
@@ -58,8 +61,22 @@ public class ReturnsController : ControllerBase
     [HttpPost("{id:guid}/process")]
     public async Task<ActionResult> ProcessReturn(Guid id, [FromBody] ProcessReturnRequest request, CancellationToken cancellationToken)
     {
-        // This would need a ProcessReturnCommand to be implemented
-        return Ok($"Process return {id} with refund method {request.RefundMethod}");
+        try
+        {
+            var command = new ProcessReturnCommand
+            {
+                ReturnId = id,
+                RefundMethod = request.RefundMethod,
+                Notes = request.Notes
+            };
+
+            await _mediator.Send(command, cancellationToken);
+            return Ok(new { message = "Return processed successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>
@@ -68,13 +85,8 @@ public class ReturnsController : ControllerBase
     [HttpGet("order/{orderId:guid}")]
     public async Task<ActionResult<IEnumerable<ReturnDto>>> GetReturnsByOrder(Guid orderId, CancellationToken cancellationToken)
     {
-        // This would need a GetReturnsByOrderQuery to be implemented
-        return Ok(new List<ReturnDto>());
+        var query = new GetReturnsByOrderQuery(orderId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
-}
-
-public class ProcessReturnRequest
-{
-    public RefundMethod RefundMethod { get; set; }
-    public string Notes { get; set; } = string.Empty;
 }

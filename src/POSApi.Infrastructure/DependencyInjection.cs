@@ -147,6 +147,19 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfMeasureRepository, UnitOfMeasureRepository>();
         services.AddScoped<IProductUnitRepository, ProductUnitRepository>();
 
+        // Multi-Store Management repositories
+        services.AddScoped<IStoreRepository, StoreRepository>();
+        // TODO: Uncomment when StoreInventory entity is created
+        // services.AddScoped<IStoreInventoryRepository, StoreInventoryRepository>();
+        // TODO: Uncomment when InterStoreTransfer entity is created
+        // services.AddScoped<IInterStoreTransferRepository, InterStoreTransferRepository>();
+
+        // Loyalty Program repositories
+        services.AddScoped<ILoyaltyProgramRepository, LoyaltyProgramRepository>();
+        services.AddScoped<ICustomerTierRepository, CustomerTierRepository>();
+        services.AddScoped<ICustomerLoyaltyRepository, CustomerLoyaltyRepository>();
+        services.AddScoped<IRewardRepository, RewardRepository>();
+
         // Authentication Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -165,6 +178,14 @@ public static class DependencyInjection
         // Domain Event Handlers
         services.AddScoped<IDomainEventHandler<LowStockAlertEvent>, LowStockAlertHandler>();
         services.AddScoped<IDomainEventHandler<OrderCompletedEvent>, OrderCompletedHandler>();
+
+        // Background Jobs
+        services.AddScoped<BackgroundJobs.IAnalyticsBackgroundJobs, BackgroundJobs.AnalyticsBackgroundJobs>();
+        services.AddScoped<BackgroundJobs.ILoyaltyBackgroundJobs, BackgroundJobs.LoyaltyBackgroundJobs>();
+
+        // Export Services
+        services.AddScoped<Services.Export.IExportService, Services.Export.PdfExportService>();
+        services.AddScoped<Services.Export.CsvExportService>();
 
         return services;
     }

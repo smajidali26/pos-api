@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using POSApi.Application.Features.Reports.Queries.ExportDailySalesReport;
+using POSApi.Application.Features.Reports.Queries.ExportInventoryReport;
 using POSApi.Application.Features.Reports.Queries.GetCustomerAnalyticsReport;
 using POSApi.Application.Features.Reports.Queries.GetDailySalesReport;
 using POSApi.Application.Features.Reports.Queries.GetInventoryReport;
-using POSApi.Infrastructure.Services.Interfaces;
+using POSApi.Application.Features.Reports.Queries.GetReportSummary;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -14,12 +16,10 @@ namespace POSApi.Web.API.Controllers;
 public class ReportsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IInfrastructureReportService _reportService;
 
-    public ReportsController(IMediator mediator, IInfrastructureReportService reportService)
+    public ReportsController(IMediator mediator)
     {
         _mediator = mediator;
-        _reportService = reportService;
     }
 
     /// <summary>
@@ -61,7 +61,8 @@ public class ReportsController : ControllerBase
     [HttpGet("daily-sales/export")]
     public async Task<ActionResult> ExportDailySalesReport([FromQuery] DateTime reportDate, CancellationToken cancellationToken)
     {
-        var csvData = await _reportService.ExportDailySalesReportToCsvAsync(reportDate, cancellationToken);
+        var query = new ExportDailySalesReportQuery(reportDate);
+        var csvData = await _mediator.Send(query, cancellationToken);
         return File(csvData, "text/csv", $"daily-sales-report-{reportDate:yyyy-MM-dd}.csv");
     }
 
@@ -71,7 +72,8 @@ public class ReportsController : ControllerBase
     [HttpGet("inventory/export")]
     public async Task<ActionResult> ExportInventoryReport([FromQuery] DateTime? asOfDate, CancellationToken cancellationToken)
     {
-        var csvData = await _reportService.ExportInventoryReportToCsvAsync(asOfDate, cancellationToken);
+        var query = new ExportInventoryReportQuery(asOfDate);
+        var csvData = await _mediator.Send(query, cancellationToken);
         var fileName = $"inventory-report-{(asOfDate ?? DateTime.Now):yyyy-MM-dd}.csv";
         return File(csvData, "text/csv", fileName);
     }
@@ -80,9 +82,10 @@ public class ReportsController : ControllerBase
     /// Get report summary
     /// </summary>
     [HttpGet("summary")]
-    public async Task<ActionResult<string>> GetReportSummary([FromQuery] DateTime reportDate, CancellationToken cancellationToken)
+    public async Task<ActionResult> GetReportSummary([FromQuery] DateTime reportDate, CancellationToken cancellationToken)
     {
-        var summary = await _reportService.GenerateReportSummaryAsync(reportDate, cancellationToken);
-        return Ok(new { Summary = summary });
+        var query = new GetReportSummaryQuery(reportDate);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 }
