@@ -14,6 +14,7 @@ public class User : AggregateRoot
     public bool IsActive { get; private set; } = true;
     public DateTime? LastLoginDate { get; private set; }
     public ICollection<Order> Orders { get; private set; } = new List<Order>();
+    public EmployeeProfile? EmployeeProfile { get; set; }
 
     private User() { } // For EF Core
 

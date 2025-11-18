@@ -47,20 +47,25 @@ public class LoyaltyBackgroundJobs : ILoyaltyBackgroundJobs
 
                     if (availablePoints > 0)
                     {
+                        // Get customer loyalty to get current balance
+                        var customerLoyalty = transaction.CustomerLoyalty;
+                        var currentBalance = customerLoyalty.CurrentPoints;
+
                         // Create expiry transaction
                         var expiryTransaction = new Domain.Entities.LoyaltyTransaction(
                             transaction.CustomerLoyaltyId,
                             0, // pointsEarned
-                            availablePoints, // pointsExpired
+                            availablePoints, // pointsRedeemed (expired points)
+                            currentBalance, // balanceBefore
+                            currentBalance - availablePoints, // balanceAfter
                             $"Points expired from transaction on {transaction.TransactionDate:yyyy-MM-dd}",
                             Domain.Entities.LoyaltyTransactionType.Expired
                         );
 
                         _context.LoyaltyTransactions.Add(expiryTransaction);
 
-                        // Update customer's current points
-                        var customerLoyalty = transaction.CustomerLoyalty;
-                        customerLoyalty.CurrentPoints -= availablePoints;
+                        // Update customer's current points through a method
+                        customerLoyalty.ExpirePoints();
 
                         totalPointsExpired += availablePoints;
                         customersAffected++;

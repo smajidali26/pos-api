@@ -1,4 +1,5 @@
 using POSApi.Domain.Common;
+using POSApi.Domain.Repositories;
 using POSApi.Infrastructure.Repositories.Interfaces;
 
 namespace POSApi.Infrastructure.Persistence;
@@ -32,6 +33,14 @@ public interface IUnitOfWork : IDisposable
     ICustomerTierRepository CustomerTiers { get; }
     ICustomerLoyaltyRepository CustomerLoyalties { get; }
     IRewardRepository Rewards { get; }
+
+    // Employee Management repositories
+    IEmployeeProfileRepository EmployeeProfiles { get; }
+    IShiftRepository Shifts { get; }
+    IShiftAttendanceRepository ShiftAttendances { get; }
+    ICommissionRepository Commissions { get; }
+    ICommissionTransactionRepository CommissionTransactions { get; }
+    IPerformanceMetricRepository PerformanceMetrics { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

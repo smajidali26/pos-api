@@ -9,7 +9,7 @@ public class CashDrawer : AggregateRoot
     public Guid StoreId { get; private set; }
     public Store Store { get; private set; } = null!;
     public Guid? CurrentShiftId { get; private set; }
-    public Shift? CurrentShift { get; private set; }
+    public CashDrawerShift? CurrentShift { get; private set; }
     public decimal OpeningBalance { get; private set; }
     public decimal CurrentBalance { get; private set; }
     public CashDrawerStatus Status { get; private set; }
@@ -18,7 +18,7 @@ public class CashDrawer : AggregateRoot
     public bool IsActive { get; private set; }
 
     public ICollection<CashMovement> CashMovements { get; private set; } = new List<CashMovement>();
-    public ICollection<Shift> Shifts { get; private set; } = new List<Shift>();
+    public ICollection<CashDrawerShift> Shifts { get; private set; } = new List<CashDrawerShift>();
 
     private CashDrawer() { } // For EF Core
 
@@ -97,7 +97,7 @@ public class CashDrawer : AggregateRoot
     }
 }
 
-public class Shift : AggregateRoot
+public class CashDrawerShift : AggregateRoot
 {
     public string ShiftNumber { get; private set; } = string.Empty;
     public Guid CashDrawerId { get; private set; }
@@ -109,29 +109,29 @@ public class Shift : AggregateRoot
     public decimal StartingCash { get; private set; }
     public decimal? EndingCash { get; private set; }
     public decimal? CashVariance { get; private set; }
-    public ShiftStatus Status { get; private set; }
+    public CashDrawerShiftStatus Status { get; private set; }
     public string Notes { get; private set; } = string.Empty;
 
     public ICollection<Order> Orders { get; private set; } = new List<Order>();
     public ICollection<TillCount> TillCounts { get; private set; } = new List<TillCount>();
 
-    private Shift() { } // For EF Core
+    private CashDrawerShift() { } // For EF Core
 
-    public Shift(string shiftNumber, Guid cashDrawerId, Guid userId, decimal startingCash)
+    public CashDrawerShift(string shiftNumber, Guid cashDrawerId, Guid userId, decimal startingCash)
     {
         ShiftNumber = shiftNumber;
         CashDrawerId = cashDrawerId;
         UserId = userId;
         StartingCash = startingCash;
         StartTime = DateTime.UtcNow;
-        Status = ShiftStatus.Active;
+        Status = CashDrawerShiftStatus.Active;
 
         AddDomainEvent(new ShiftStartedEvent(Id, shiftNumber, userId, startingCash));
     }
 
     public void EndShift(decimal endingCash, string notes = "")
     {
-        if (Status != ShiftStatus.Active)
+        if (Status != CashDrawerShiftStatus.Active)
         {
             throw new InvalidOperationException($"Cannot end shift in {Status} status");
         }
@@ -139,7 +139,7 @@ public class Shift : AggregateRoot
         EndTime = DateTime.UtcNow;
         EndingCash = endingCash;
         CashVariance = endingCash - CalculateExpectedCash();
-        Status = ShiftStatus.Completed;
+        Status = CashDrawerShiftStatus.Completed;
         Notes = notes;
         SetUpdatedAt();
 
@@ -148,7 +148,7 @@ public class Shift : AggregateRoot
 
     public void AddTillCount(Dictionary<CashDenomination, int> denominations, Guid countedByUserId)
     {
-        if (Status != ShiftStatus.Active)
+        if (Status != CashDrawerShiftStatus.Active)
         {
             throw new InvalidOperationException("Can only count till during active shift");
         }
@@ -198,7 +198,7 @@ public class CashMovement : BaseEntity
 public class TillCount : BaseEntity
 {
     public Guid ShiftId { get; private set; }
-    public Shift Shift { get; private set; } = null!;
+    public CashDrawerShift Shift { get; private set; } = null!;
     public Guid CountedByUserId { get; private set; }
     public User CountedBy { get; private set; } = null!;
     public DateTime CountTime { get; private set; }
@@ -253,7 +253,7 @@ public enum CashDrawerStatus
     Maintenance
 }
 
-public enum ShiftStatus
+public enum CashDrawerShiftStatus
 {
     Active,
     Completed,
