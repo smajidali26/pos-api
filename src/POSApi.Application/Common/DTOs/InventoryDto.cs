@@ -166,7 +166,7 @@ public class SerialNumberHistoryDto
 {
     public Guid Id { get; set; }
     public Guid SerialNumberId { get; set; }
-    public SerialNumberHistoryAction Action { get; set; }
+    public SerialNumberAction Action { get; set; }
     public string ActionName { get; set; } = string.Empty;
     public string? PreviousStatus { get; set; }
     public string? NewStatus { get; set; }

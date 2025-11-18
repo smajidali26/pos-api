@@ -1,7 +1,15 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using POSApi.Application.Common.DTOs;
+using POSApi.Application.Features.Locations.Commands.ActivateLocation;
+using POSApi.Application.Features.Locations.Commands.CreateLocation;
+using POSApi.Application.Features.Locations.Commands.DeactivateLocation;
+using POSApi.Application.Features.Locations.Commands.UpdateLocation;
+using POSApi.Application.Features.Locations.Queries.GetAllLocations;
+using POSApi.Application.Features.Locations.Queries.GetLocationById;
+using POSApi.Application.Features.Locations.Queries.GetLocationProducts;
 using POSApi.Domain.Entities;
-using POSApi.Infrastructure.Persistence;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -10,98 +18,45 @@ namespace POSApi.Web.API.Controllers;
 [Authorize]
 public class LocationsController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMediator _mediator;
 
-    public LocationsController(IUnitOfWork unitOfWork)
+    public LocationsController(IMediator mediator)
     {
-        _unitOfWork = unitOfWork;
+        _mediator = mediator;
     }
 
     /// <summary>
     /// Get all locations
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetAllLocations(
+    public async Task<ActionResult<IEnumerable<LocationDto>>> GetAllLocations(
         [FromQuery] LocationType? type = null,
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _unitOfWork.Context.Locations.AsQueryable();
+        var query = new GetAllLocationsQuery
+        {
+            LocationType = type,
+            IncludeInactive = includeInactive
+        };
 
-        if (!includeInactive)
-            query = query.Where(l => l.IsActive);
-
-        if (type.HasValue)
-            query = query.Where(l => l.Type == type.Value);
-
-        var locations = await query
-            .OrderBy(l => l.Name)
-            .Select(l => new
-            {
-                l.Id,
-                l.Name,
-                l.Code,
-                l.Type,
-                l.Address,
-                l.City,
-                l.State,
-                l.ZipCode,
-                l.FullAddress,
-                l.IsActive,
-                l.ParentLocationId,
-                ParentLocationName = l.ParentLocation != null ? l.ParentLocation.Name : null,
-                l.Notes,
-                CreatedBy = l.CreatedBy.Username,
-                l.CreatedAt,
-                l.UpdatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return Ok(locations);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
     /// Get location by ID
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<object>> GetLocationById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<LocationDto>> GetLocationById(Guid id, CancellationToken cancellationToken)
     {
-        var location = await _unitOfWork.Context.Locations
-            .Where(l => l.Id == id)
-            .Select(l => new
-            {
-                l.Id,
-                l.Name,
-                l.Code,
-                l.Type,
-                l.Address,
-                l.City,
-                l.State,
-                l.ZipCode,
-                l.FullAddress,
-                l.IsActive,
-                l.ParentLocationId,
-                ParentLocationName = l.ParentLocation != null ? l.ParentLocation.Name : null,
-                l.Notes,
-                CreatedBy = l.CreatedBy.Username,
-                l.CreatedAt,
-                l.UpdatedAt,
-                SubLocations = l.SubLocations.Select(sl => new
-                {
-                    sl.Id,
-                    sl.Name,
-                    sl.Code,
-                    sl.Type
-                }).ToList(),
-                ProductCount = l.ProductLocations.Count,
-                TotalQuantity = l.ProductLocations.Sum(pl => pl.Quantity)
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+        var query = new GetLocationByIdQuery { LocationId = id };
+        var result = await _mediator.Send(query, cancellationToken);
 
-        if (location == null)
+        if (result == null)
             return NotFound($"Location with ID {id} not found");
 
-        return Ok(location);
+        return Ok(result);
     }
 
     /// <summary>
@@ -109,43 +64,16 @@ public class LocationsController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Policy = "RequireManager")]
-    public async Task<ActionResult<Guid>> CreateLocation([FromBody] CreateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Guid>> CreateLocation(
+        [FromBody] CreateLocationCommand command,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? throw new UnauthorizedAccessException());
-
-            // Check if code already exists
-            var existingLocation = await _unitOfWork.Context.Locations
-                .FirstOrDefaultAsync(l => l.Code == request.Code, cancellationToken);
-
-            if (existingLocation != null)
-                return BadRequest($"Location with code '{request.Code}' already exists");
-
-            var location = new Location(
-                request.Name,
-                request.Code,
-                request.Type,
-                userId,
-                request.Address ?? "",
-                request.City ?? "",
-                request.State ?? "",
-                request.ZipCode ?? ""
-            );
-
-            if (request.ParentLocationId.HasValue)
-                location.SetParentLocation(request.ParentLocationId.Value);
-
-            if (!string.IsNullOrEmpty(request.Notes))
-                location.UpdateDetails(request.Name, request.Address ?? "", request.City ?? "",
-                    request.State ?? "", request.ZipCode ?? "", request.Notes);
-
-            await _unitOfWork.Context.Locations.AddAsync(location, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return CreatedAtAction(nameof(GetLocationById), new { id = location.Id }, location.Id);
+            var result = await _mediator.Send(command, cancellationToken);
+            return CreatedAtAction(nameof(GetLocationById), new { id = result }, result);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -156,31 +84,18 @@ public class LocationsController : ControllerBase
     /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "RequireManager")]
-    public async Task<ActionResult> UpdateLocation(Guid id, [FromBody] UpdateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UpdateLocation(
+        Guid id,
+        [FromBody] UpdateLocationCommand command,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var location = await _unitOfWork.Context.Locations.FindAsync(new object[] { id }, cancellationToken);
-            if (location == null)
-                return NotFound($"Location with ID {id} not found");
-
-            location.UpdateDetails(
-                request.Name,
-                request.Address ?? "",
-                request.City ?? "",
-                request.State ?? "",
-                request.ZipCode ?? "",
-                request.Notes ?? ""
-            );
-
-            if (request.ParentLocationId != location.ParentLocationId)
-                location.SetParentLocation(request.ParentLocationId);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
+            command.LocationId = id;
+            await _mediator.Send(command, cancellationToken);
             return NoContent();
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -193,14 +108,16 @@ public class LocationsController : ControllerBase
     [Authorize(Policy = "RequireManager")]
     public async Task<ActionResult> ActivateLocation(Guid id, CancellationToken cancellationToken)
     {
-        var location = await _unitOfWork.Context.Locations.FindAsync(new object[] { id }, cancellationToken);
-        if (location == null)
-            return NotFound($"Location with ID {id} not found");
-
-        location.Activate();
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        try
+        {
+            var command = new ActivateLocationCommand { LocationId = id };
+            await _mediator.Send(command, cancellationToken);
+            return Ok(new { Message = "Location activated successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>
@@ -210,78 +127,36 @@ public class LocationsController : ControllerBase
     [Authorize(Policy = "RequireManager")]
     public async Task<ActionResult> DeactivateLocation(Guid id, CancellationToken cancellationToken)
     {
-        var location = await _unitOfWork.Context.Locations.FindAsync(new object[] { id }, cancellationToken);
-        if (location == null)
-            return NotFound($"Location with ID {id} not found");
-
-        location.Deactivate();
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        try
+        {
+            var command = new DeactivateLocationCommand { LocationId = id };
+            await _mediator.Send(command, cancellationToken);
+            return Ok(new { Message = "Location deactivated successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>
     /// Get products at a specific location
     /// </summary>
     [HttpGet("{id:guid}/products")]
-    public async Task<ActionResult<IEnumerable<object>>> GetLocationProducts(
+    public async Task<ActionResult<IEnumerable<ProductLocationDto>>> GetLocationProducts(
         Guid id,
         [FromQuery] bool includeLowStock = false,
         [FromQuery] bool includeOverstock = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _unitOfWork.Context.ProductLocations
-            .Where(pl => pl.LocationId == id && pl.IsActive);
+        var query = new GetLocationProductsQuery
+        {
+            LocationId = id,
+            IncludeLowStock = includeLowStock,
+            IncludeOverstock = includeOverstock
+        };
 
-        if (includeLowStock)
-            query = query.Where(pl => pl.IsLowStock);
-
-        if (includeOverstock)
-            query = query.Where(pl => pl.IsOverStock);
-
-        var products = await query
-            .Select(pl => new
-            {
-                pl.ProductId,
-                ProductName = pl.Product.Name,
-                SKU = pl.Product.SKU,
-                Barcode = pl.Product.Barcode,
-                Price = pl.Product.Price,
-                pl.Quantity,
-                pl.MinStockLevel,
-                pl.MaxStockLevel,
-                pl.BinLocation,
-                pl.IsLowStock,
-                pl.IsOverStock,
-                ProductIsActive = pl.Product.IsActive
-            })
-            .OrderBy(p => p.ProductName)
-            .ToListAsync(cancellationToken);
-
-        return Ok(products);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
-}
-
-public class CreateLocationRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
-    public LocationType Type { get; set; }
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? ZipCode { get; set; }
-    public Guid? ParentLocationId { get; set; }
-    public string? Notes { get; set; }
-}
-
-public class UpdateLocationRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? ZipCode { get; set; }
-    public Guid? ParentLocationId { get; set; }
-    public string? Notes { get; set; }
 }
