@@ -1,0 +1,39 @@
+using Microsoft.EntityFrameworkCore;
+using POSApi.Domain.Entities;
+using POSApi.Infrastructure.Persistence;
+using POSApi.Infrastructure.Repositories.Interfaces;
+
+namespace POSApi.Infrastructure.Repositories;
+
+public class StoreInventoryRepository : Repository<StoreInventory>, IStoreInventoryRepository
+{
+    public StoreInventoryRepository(PosDbContext context) : base(context)
+    {
+    }
+
+    public async Task<StoreInventory?> GetByStoreAndProductAsync(Guid storeId, Guid productId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(si => si.Store)
+            .Include(si => si.Product)
+            .FirstOrDefaultAsync(si => si.StoreId == storeId && si.ProductId == productId, cancellationToken);
+    }
+
+    public async Task<List<StoreInventory>> GetByStoreAsync(Guid storeId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(si => si.Product)
+                .ThenInclude(p => p.Category)
+            .Where(si => si.StoreId == storeId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<StoreInventory>> GetLowStockItemsAsync(Guid storeId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(si => si.Product)
+                .ThenInclude(p => p.Category)
+            .Where(si => si.StoreId == storeId && si.Quantity <= si.ReorderPoint)
+            .ToListAsync(cancellationToken);
+    }
+}

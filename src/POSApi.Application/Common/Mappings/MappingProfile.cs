@@ -90,7 +90,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Product, opt => opt.Ignore());
 
         // User mappings
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDto>()
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()));
         CreateMap<UserDto, User>()
             .ForMember(dest => dest.Orders, opt => opt.Ignore());
 

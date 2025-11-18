@@ -2,15 +2,16 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using POSApi.Application.Common.DTOs;
+using POSApi.Application.Common.DTOs.Requests;
 using POSApi.Application.Features.Vendors.Commands.CreateVendor;
 using POSApi.Application.Features.Vendors.Commands.UpdateVendor;
 using POSApi.Application.Features.Vendors.Commands.UpdateVendorStatus;
 using POSApi.Application.Features.Vendors.Queries.GetAllVendors;
 using POSApi.Application.Features.Vendors.Queries.GetVendorById;
 using POSApi.Application.Features.Vendors.Queries.GetVendorsByType;
+using POSApi.Application.Features.Vendors.Queries.GetVendorsWithCreditLimitExceeded;
 using POSApi.Application.Features.Vendors.Queries.SearchVendors;
 using POSApi.Domain.Entities;
-using POSApi.Infrastructure.Persistence;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -20,12 +21,10 @@ namespace POSApi.Web.API.Controllers;
 public class VendorsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public VendorsController(IMediator mediator, IUnitOfWork unitOfWork)
+    public VendorsController(IMediator mediator)
     {
         _mediator = mediator;
-        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -82,21 +81,8 @@ public class VendorsController : ControllerBase
     [HttpGet("credit-limit-exceeded")]
     public async Task<ActionResult<IEnumerable<VendorDto>>> GetVendorsWithCreditLimitExceeded(CancellationToken cancellationToken)
     {
-        var vendors = await _unitOfWork.Vendors.GetVendorsWithCreditLimitExceededAsync(cancellationToken);
-        
-        var result = vendors.Select(v => new VendorDto
-        {
-            Id = v.Id,
-            Name = v.Name,
-            CompanyName = v.CompanyName,
-            Email = v.Email,
-            CreditLimit = v.CreditLimit,
-            CurrentBalance = v.CurrentBalance,
-            AvailableCredit = v.AvailableCredit,
-            Status = v.Status,
-            IsActive = v.IsActive
-        });
-
+        var query = new GetVendorsWithCreditLimitExceededQuery();
+        var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
 
@@ -322,16 +308,4 @@ public class VendorsController : ControllerBase
         PaymentTerms.TwoTenNet30 => "2% 10 Net 30",
         _ => terms.ToString()
     };
-}
-
-// Request DTOs
-public class UpdateVendorStatusRequest
-{
-    public VendorStatus Status { get; set; }
-    public string? Reason { get; set; }
-}
-
-public class BlockVendorRequest
-{
-    public string Reason { get; set; } = string.Empty;
 }

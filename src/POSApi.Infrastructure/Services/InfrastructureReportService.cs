@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.Extensions.Logging;
 using POSApi.Domain.Entities;
 using POSApi.Infrastructure.DTOs.Reports;
@@ -211,48 +210,6 @@ public class InfrastructureReportService : IInfrastructureReportService
         return report;
     }
 
-    public async Task<byte[]> ExportDailySalesReportToCsvAsync(DateTime reportDate, CancellationToken cancellationToken = default)
-    {
-        var report = await GenerateDailySalesReportAsync(reportDate, cancellationToken);
-        return GenerateDailySalesCsv(report);
-    }
-
-    public async Task<byte[]> ExportInventoryReportToCsvAsync(DateTime? asOfDate = null, CancellationToken cancellationToken = default)
-    {
-        var report = await GenerateInventoryReportAsync(asOfDate, cancellationToken);
-        return GenerateInventoryCsv(report);
-    }
-
-    public async Task<string> GenerateReportSummaryAsync(DateTime reportDate, CancellationToken cancellationToken = default)
-    {
-        var salesReport = await GenerateDailySalesReportAsync(reportDate, cancellationToken);
-        var inventoryReport = await GenerateInventoryReportAsync(reportDate, cancellationToken);
-
-        var summary = $"""
-            Daily Report Summary - {reportDate:yyyy-MM-dd}
-            ===============================================
-            
-            SALES PERFORMANCE:
-            � Total Orders: {salesReport.TotalOrders}
-            � Total Sales: {salesReport.TotalSales:C}
-            � Net Sales: {salesReport.NetSales:C}
-            � Average Order Value: {(salesReport.TotalOrders > 0 ? salesReport.TotalSales / salesReport.TotalOrders : 0):C}
-            
-            TOP PERFORMING PRODUCTS:
-            {string.Join("\n", salesReport.TopSellingProducts.Take(5).Select(p => $"� {p.ProductName}: {p.QuantitySold} units, {p.TotalRevenue:C}"))}
-            
-            INVENTORY STATUS:
-            � Total Products: {inventoryReport.TotalProducts}
-            � Low Stock Items: {inventoryReport.LowStockProducts}
-            � Out of Stock Items: {inventoryReport.OutOfStockProducts}
-            � Total Inventory Value: {inventoryReport.TotalInventoryValue:C}
-            
-            CASHIER PERFORMANCE:
-            {string.Join("\n", salesReport.CashierPerformance.Select(c => $"� {c.CashierName}: {c.OrdersProcessed} orders, {c.TotalSales:C}"))}
-            """;
-
-        return summary;
-    }
 
     private static string GetStockStatus(int currentStock, int minStockLevel)
     {
@@ -324,71 +281,5 @@ public class InfrastructureReportService : IInfrastructureReportService
     {
         // Assuming 1 point per dollar spent for customers
         return orders.Where(o => o.CustomerId.HasValue).Sum(o => Math.Floor(o.TotalAmount));
-    }
-
-    private static byte[] GenerateDailySalesCsv(DailySalesReportDto report)
-    {
-        var csv = new StringBuilder();
-        
-        // Header
-        csv.AppendLine($"Daily Sales Report - {report.ReportDate:yyyy-MM-dd}");
-        csv.AppendLine();
-        
-        // Summary
-        csv.AppendLine("Summary");
-        csv.AppendLine("Metric,Value");
-        csv.AppendLine($"Total Orders,{report.TotalOrders}");
-        csv.AppendLine($"Total Sales,{report.TotalSales}");
-        csv.AppendLine($"Net Sales,{report.NetSales}");
-        csv.AppendLine($"Total Tax,{report.TotalTax}");
-        csv.AppendLine($"Total Discounts,{report.TotalDiscounts}");
-        csv.AppendLine();
-        
-        // Top Products
-        csv.AppendLine("Top Selling Products");
-        csv.AppendLine("Product Name,SKU,Quantity Sold,Total Revenue");
-        foreach (var product in report.TopSellingProducts)
-        {
-            csv.AppendLine($"{product.ProductName},{product.SKU},{product.QuantitySold},{product.TotalRevenue}");
-        }
-        csv.AppendLine();
-        
-        // Payment Methods
-        csv.AppendLine("Payment Method Breakdown");
-        csv.AppendLine("Payment Method,Order Count,Total Amount,Percentage");
-        foreach (var payment in report.PaymentMethodBreakdown)
-        {
-            csv.AppendLine($"{payment.PaymentMethod},{payment.OrderCount},{payment.TotalAmount},{payment.Percentage:F2}%");
-        }
-        
-        return Encoding.UTF8.GetBytes(csv.ToString());
-    }
-
-    private static byte[] GenerateInventoryCsv(InventoryReportDto report)
-    {
-        var csv = new StringBuilder();
-        
-        // Header
-        csv.AppendLine($"Inventory Report - {report.ReportDate:yyyy-MM-dd}");
-        csv.AppendLine();
-        
-        // Summary
-        csv.AppendLine("Summary");
-        csv.AppendLine("Metric,Value");
-        csv.AppendLine($"Total Products,{report.TotalProducts}");
-        csv.AppendLine($"Low Stock Products,{report.LowStockProducts}");
-        csv.AppendLine($"Out of Stock Products,{report.OutOfStockProducts}");
-        csv.AppendLine($"Total Inventory Value,{report.TotalInventoryValue}");
-        csv.AppendLine();
-        
-        // Product Details
-        csv.AppendLine("Product Inventory");
-        csv.AppendLine("Product Name,SKU,Category,Current Stock,Min Stock Level,Unit Cost,Unit Price,Total Value,Status");
-        foreach (var product in report.ProductInventory)
-        {
-            csv.AppendLine($"{product.ProductName},{product.SKU},{product.CategoryName},{product.CurrentStock},{product.MinStockLevel},{product.UnitCost},{product.UnitPrice},{product.TotalValue},{product.StockStatus}");
-        }
-        
-        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 }

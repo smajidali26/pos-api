@@ -1,8 +1,12 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using POSApi.Infrastructure.Services;
+using POSApi.Application.Common.DTOs.Requests;
+using POSApi.Application.Features.Payments.Commands.CreatePaymentIntent;
+using POSApi.Application.Features.Payments.Commands.ProcessCashPayment;
+using POSApi.Application.Features.Payments.Commands.ProcessRefund;
 using POSApi.Domain.Entities;
-using POSApi.Infrastructure.Persistence;
+using POSApi.Infrastructure.Services;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -11,17 +15,14 @@ namespace POSApi.Web.API.Controllers;
 [Route("api/[controller]")]
 public class PaymentsController : ControllerBase
 {
-    private readonly IPaymentGatewayService _paymentGatewayService;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMediator _mediator;
     private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
-        IPaymentGatewayService paymentGatewayService,
-        IUnitOfWork unitOfWork,
+        IMediator mediator,
         ILogger<PaymentsController> logger)
     {
-        _paymentGatewayService = paymentGatewayService;
-        _unitOfWork = unitOfWork;
+        _mediator = mediator;
         _logger = logger;
     }
 
@@ -36,11 +37,14 @@ public class PaymentsController : ControllerBase
         [FromBody] CreatePaymentIntentRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _paymentGatewayService.CreatePaymentIntentAsync(
-            request.Amount,
-            request.Currency ?? "USD",
-            request.OrderId.ToString(),
-            cancellationToken);
+        var command = new CreatePaymentIntentCommand
+        {
+            Amount = request.Amount,
+            Currency = request.Currency,
+            OrderId = request.OrderId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
         {
@@ -69,24 +73,22 @@ public class PaymentsController : ControllerBase
         [FromBody] ProcessCashPaymentRequest request,
         CancellationToken cancellationToken)
     {
-        var order = await _unitOfWork.Orders.GetByIdAsync(request.OrderId, cancellationToken);
-        if (order == null)
+        try
         {
-            return BadRequest(new { error = "Order not found" });
+            var command = new ProcessCashPaymentCommand
+            {
+                OrderId = request.OrderId,
+                Amount = request.Amount
+            };
+
+            var payment = await _mediator.Send(command, cancellationToken);
+
+            return Ok(payment);
         }
-
-        var paymentNumber = $"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..8]}";
-        var payment = new Payment(request.OrderId, paymentNumber, request.Amount, PaymentMethod.Cash, Guid.NewGuid());
-
-        payment.Authorize("CASH-AUTH", $"CASH-{Guid.NewGuid()}");
-        payment.Capture();
-
-        // Update order
-        order.Complete(PaymentMethod.Cash);
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return Ok(payment);
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -100,14 +102,15 @@ public class PaymentsController : ControllerBase
         [FromBody] ProcessRefundRequest request,
         CancellationToken cancellationToken)
     {
-        // Get payment from DB (you'll need to add a method to get payment by ID)
-        // For now, assume we have the stripe transaction ID
+        var command = new ProcessRefundCommand
+        {
+            PaymentId = paymentId,
+            TransactionId = request.TransactionId,
+            Amount = request.Amount,
+            Reason = request.Reason
+        };
 
-        var result = await _paymentGatewayService.ProcessRefundAsync(
-            request.TransactionId,
-            request.Amount,
-            request.Reason,
-            cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
         {
@@ -116,24 +119,4 @@ public class PaymentsController : ControllerBase
 
         return Ok(result);
     }
-}
-
-public record CreatePaymentIntentRequest
-{
-    public decimal Amount { get; init; }
-    public string? Currency { get; init; }
-    public Guid OrderId { get; init; }
-}
-
-public record ProcessCashPaymentRequest
-{
-    public Guid OrderId { get; init; }
-    public decimal Amount { get; init; }
-}
-
-public record ProcessRefundRequest
-{
-    public string TransactionId { get; init; } = string.Empty;
-    public decimal Amount { get; init; }
-    public string Reason { get; init; } = string.Empty;
 }

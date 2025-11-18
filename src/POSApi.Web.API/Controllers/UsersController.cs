@@ -1,11 +1,13 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using POSApi.Application.Common.DTOs.Requests;
+using POSApi.Application.Features.Users.Commands.AdminResetPassword;
 using POSApi.Application.Features.Users.Commands.ChangePassword;
 using POSApi.Application.Features.Users.Commands.CreateUser;
-using POSApi.Application.Features.Users.Commands.AdminResetPassword;
+using POSApi.Application.Features.Users.Commands.ToggleUserStatus;
+using POSApi.Application.Features.Users.Queries.GetAllUsers;
 using POSApi.Infrastructure.Services;
-using POSApi.Infrastructure.Persistence;
 
 namespace POSApi.Web.API.Controllers;
 
@@ -16,13 +18,11 @@ public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public UsersController(IMediator mediator, ICurrentUserService currentUserService, IUnitOfWork unitOfWork)
+    public UsersController(IMediator mediator, ICurrentUserService currentUserService)
     {
         _mediator = mediator;
         _currentUserService = currentUserService;
-        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -57,23 +57,8 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "Owner")]
     public async Task<ActionResult> GetAllUsers(CancellationToken cancellationToken)
     {
-        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
-        var userDtos = users.Select(u => new
-        {
-            id = u.Id,
-            username = u.Username,
-            firstName = u.FirstName,
-            lastName = u.LastName,
-            fullName = u.FullName,
-            email = u.Email,
-            role = (int)u.Role,
-            roleName = u.Role.ToString(),
-            isActive = u.IsActive,
-            lastLoginDate = u.LastLoginDate,
-            createdAt = u.CreatedAt
-        });
-
-        return Ok(userDtos);
+        var users = await _mediator.Send(new GetAllUsersQuery(), cancellationToken);
+        return Ok(users);
     }
 
     /// <summary>
@@ -103,27 +88,16 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
-            if (user == null)
+            var command = new ToggleUserStatusCommand
             {
-                return NotFound(new { message = "User not found" });
-            }
+                UserId = id,
+                IsActive = request.IsActive
+            };
 
-            if (request.IsActive)
-            {
-                user.Activate();
-            }
-            else
-            {
-                user.Deactivate();
-            }
-
-            await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
+            await _mediator.Send(command, cancellationToken);
             return Ok(new { message = $"User {(request.IsActive ? "activated" : "deactivated")} successfully" });
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
@@ -146,9 +120,4 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-}
-
-public class ToggleStatusRequest
-{
-    public bool IsActive { get; set; }
 }

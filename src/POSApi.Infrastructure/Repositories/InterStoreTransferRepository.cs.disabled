@@ -1,0 +1,60 @@
+using Microsoft.EntityFrameworkCore;
+using POSApi.Domain.Entities;
+using POSApi.Infrastructure.Persistence;
+using POSApi.Infrastructure.Repositories.Interfaces;
+
+namespace POSApi.Infrastructure.Repositories;
+
+public class InterStoreTransferRepository : Repository<InterStoreTransfer>, IInterStoreTransferRepository
+{
+    public InterStoreTransferRepository(PosDbContext context) : base(context)
+    {
+    }
+
+    public async Task<InterStoreTransfer?> GetByTransferNumberAsync(string transferNumber, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(t => t.FromStore)
+            .Include(t => t.ToStore)
+            .Include(t => t.RequestedByUser)
+            .Include(t => t.Items)
+                .ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(t => t.TransferNumber == transferNumber, cancellationToken);
+    }
+
+    public async Task<List<InterStoreTransfer>> GetByStoreAsync(Guid storeId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(t => t.FromStore)
+            .Include(t => t.ToStore)
+            .Include(t => t.RequestedByUser)
+            .Where(t => t.FromStoreId == storeId || t.ToStoreId == storeId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<InterStoreTransfer>> GetByStatusAsync(InterStoreTransferStatus status, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(t => t.FromStore)
+            .Include(t => t.ToStore)
+            .Include(t => t.RequestedByUser)
+            .Where(t => t.Status == status)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<InterStoreTransfer?> GetWithItemsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(t => t.FromStore)
+            .Include(t => t.ToStore)
+            .Include(t => t.RequestedByUser)
+            .Include(t => t.ApprovedByUser)
+            .Include(t => t.ReceivedByUser)
+            .Include(t => t.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Category)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+    }
+}

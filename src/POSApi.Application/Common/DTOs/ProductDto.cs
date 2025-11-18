@@ -112,3 +112,39 @@ public class ProductSearchRequest : PaginationRequest
     public bool? IsLowStock { get; set; }
     public bool IncludeInactive { get; set; } = false;
 }
+
+public class UnitTypeDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+}
+
+public class ProductAnalyticsDto
+{
+    public int TotalProducts { get; set; }
+    public int ActiveProducts { get; set; }
+    public int InactiveProducts { get; set; }
+    public int LowStockProducts { get; set; }
+    public int OutOfStockProducts { get; set; }
+    public int ProductsNeedingReorder { get; set; }
+    public decimal TotalInventoryValue { get; set; }
+    public decimal AverageProductPrice { get; set; }
+    public IEnumerable<CategoryProductCount> TopCategories { get; set; } = new List<CategoryProductCount>();
+}
+
+public class CategoryProductCount
+{
+    public string CategoryName { get; set; } = string.Empty;
+    public int ProductCount { get; set; }
+}
+
+public class UnitConversionResultDto
+{
+    public decimal FromQuantity { get; set; }
+    public string FromUnit { get; set; } = string.Empty;
+    public decimal ToQuantity { get; set; }
+    public string ToUnit { get; set; } = string.Empty;
+    public decimal ConversionFactor { get; set; }
+}

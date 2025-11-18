@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using POSApi.Application.Common.DTOs;
+using POSApi.Application.Common.DTOs.Requests;
 using POSApi.Application.Features.PurchaseOrders.Commands.ApprovePurchaseOrder;
 using POSApi.Application.Features.PurchaseOrders.Commands.CancelPurchaseOrder;
 using POSApi.Application.Features.PurchaseOrders.Commands.CompletePurchaseOrder;
@@ -243,27 +244,4 @@ public class PurchaseOrdersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-}
-
-// Request DTOs
-public class ApprovePurchaseOrderRequest
-{
-    public Guid ApprovedByUserId { get; set; }
-}
-
-public class ReceivePurchaseOrderRequest
-{
-    public Dictionary<Guid, int> ReceivedQuantities { get; set; } = new();
-    public DateTime? ActualDeliveryDate { get; set; }
-    public string Notes { get; set; } = string.Empty;
-}
-
-public class CompletePurchaseOrderRequest
-{
-    public string CompletionNotes { get; set; } = string.Empty;
-}
-
-public class CancelPurchaseOrderRequest
-{
-    public string CancellationReason { get; set; } = string.Empty;
 }
