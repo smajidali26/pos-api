@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using POSApi.Domain.Common;
+using POSApi.Domain.Repositories;
 using POSApi.Infrastructure.Repositories;
 using POSApi.Infrastructure.Repositories.Interfaces;
 using POSApi.Infrastructure.Services;
@@ -40,6 +41,14 @@ public class UnitOfWork : IUnitOfWork
     private ICustomerLoyaltyRepository? _customerLoyalties;
     private IRewardRepository? _rewards;
 
+    // Employee Management repositories
+    private IEmployeeProfileRepository? _employeeProfiles;
+    private IShiftRepository? _shifts;
+    private IShiftAttendanceRepository? _shiftAttendances;
+    private ICommissionRepository? _commissions;
+    private ICommissionTransactionRepository? _commissionTransactions;
+    private IPerformanceMetricRepository? _performanceMetrics;
+
     public UnitOfWork(PosDbContext context, IDomainEventDispatcher domainEventDispatcher)
     {
         _context = context;
@@ -73,6 +82,14 @@ public class UnitOfWork : IUnitOfWork
     public ICustomerTierRepository CustomerTiers => _customerTiers ??= new CustomerTierRepository(_context);
     public ICustomerLoyaltyRepository CustomerLoyalties => _customerLoyalties ??= new CustomerLoyaltyRepository(_context);
     public IRewardRepository Rewards => _rewards ??= new RewardRepository(_context);
+
+    // Employee Management repositories
+    public IEmployeeProfileRepository EmployeeProfiles => _employeeProfiles ??= new EmployeeProfileRepository(_context);
+    public IShiftRepository Shifts => _shifts ??= new ShiftRepository(_context);
+    public IShiftAttendanceRepository ShiftAttendances => _shiftAttendances ??= new ShiftAttendanceRepository(_context);
+    public ICommissionRepository Commissions => _commissions ??= new CommissionRepository(_context);
+    public ICommissionTransactionRepository CommissionTransactions => _commissionTransactions ??= new CommissionTransactionRepository(_context);
+    public IPerformanceMetricRepository PerformanceMetrics => _performanceMetrics ??= new PerformanceMetricRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

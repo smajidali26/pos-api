@@ -77,6 +77,14 @@ public class PosDbContext : DbContext
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<RewardRedemption> RewardRedemptions => Set<RewardRedemption>();
 
+    // Employee Management entities
+    public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
+    public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<ShiftAttendance> ShiftAttendances => Set<ShiftAttendance>();
+    public DbSet<Commission> Commissions => Set<Commission>();
+    public DbSet<CommissionTransaction> CommissionTransactions => Set<CommissionTransaction>();
+    public DbSet<PerformanceMetric> PerformanceMetrics => Set<PerformanceMetric>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

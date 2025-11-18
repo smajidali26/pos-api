@@ -159,6 +159,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomerTierRepository, CustomerTierRepository>();
         services.AddScoped<ICustomerLoyaltyRepository, CustomerLoyaltyRepository>();
         services.AddScoped<IRewardRepository, RewardRepository>();
+// Employee Management repositories        services.AddScoped<IEmployeeProfileRepository, EmployeeProfileRepository>();        services.AddScoped<IShiftRepository, ShiftRepository>();        services.AddScoped<IShiftAttendanceRepository, ShiftAttendanceRepository>();        services.AddScoped<ICommissionRepository, CommissionRepository>();        services.AddScoped<ICommissionTransactionRepository, CommissionTransactionRepository>();        services.AddScoped<IPerformanceMetricRepository, PerformanceMetricRepository>();
 
         // Authentication Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -180,7 +181,8 @@ public static class DependencyInjection
         services.AddScoped<IDomainEventHandler<OrderCompletedEvent>, OrderCompletedHandler>();
 
         // Background Jobs
-        services.AddScoped<BackgroundJobs.IAnalyticsBackgroundJobs, BackgroundJobs.AnalyticsBackgroundJobs>();
+        // services.AddScoped<BackgroundJobs.IAnalyticsBackgroundJobs, BackgroundJobs.AnalyticsBackgroundJobs>();
+        // services.AddScoped<BackgroundJobs.IEmployeeBackgroundJobs, BackgroundJobs.EmployeeBackgroundJobs>();
         services.AddScoped<BackgroundJobs.ILoyaltyBackgroundJobs, BackgroundJobs.LoyaltyBackgroundJobs>();
 
         // Export Services
