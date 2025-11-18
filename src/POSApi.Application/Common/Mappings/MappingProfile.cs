@@ -155,10 +155,89 @@ public class MappingProfile : Profile
         CreateMap<PromotionUsage, PromotionUsageDto>()
             .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.Order != null ? src.Order.OrderNumber : string.Empty))
             .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName : null));
-        
+
         CreateMap<PromotionUsageDto, PromotionUsage>()
             .ForMember(dest => dest.Promotion, opt => opt.Ignore())
             .ForMember(dest => dest.Order, opt => opt.Ignore())
             .ForMember(dest => dest.Customer, opt => opt.Ignore());
+
+        // Inventory mappings
+        CreateMap<InventoryMovement, InventoryMovementDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+            .ForMember(dest => dest.MovementTypeName, opt => opt.MapFrom(src => src.Type.ToString()))
+            .ForMember(dest => dest.PerformedByName, opt => opt.MapFrom(src => src.MovedBy != null ? src.MovedBy.FullName : string.Empty))
+            .ForMember(dest => dest.QuantityChanged, opt => opt.MapFrom(src => src.Quantity));
+
+        // Location mappings
+        CreateMap<Location, LocationDto>()
+            .ForMember(dest => dest.LocationTypeName, opt => opt.MapFrom(src => src.LocationType.ToString()))
+            .ForMember(dest => dest.ParentLocationName, opt => opt.MapFrom(src => src.ParentLocation != null ? src.ParentLocation.Name : null))
+            .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.ProductLocations.Count(pl => pl.IsActive)))
+            .ForMember(dest => dest.TotalInventoryValue, opt => opt.MapFrom(src => src.ProductLocations.Sum(pl => pl.Quantity * (pl.Product != null ? pl.Product.Cost : 0))));
+
+        // ProductLocation mappings
+        CreateMap<ProductLocation, ProductLocationDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : string.Empty));
+
+        // StockTransfer mappings
+        CreateMap<StockTransfer, StockTransferDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.FromLocationName, opt => opt.MapFrom(src => src.FromLocation != null ? src.FromLocation.Name : string.Empty))
+            .ForMember(dest => dest.ToLocationName, opt => opt.MapFrom(src => src.ToLocation != null ? src.ToLocation.Name : string.Empty))
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.RequestedByName, opt => opt.MapFrom(src => src.RequestedBy != null ? src.RequestedBy.FullName : string.Empty))
+            .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.ApprovedBy != null ? src.ApprovedBy.FullName : null))
+            .ForMember(dest => dest.ShippedByName, opt => opt.MapFrom(src => src.ShippedBy != null ? src.ShippedBy.FullName : null))
+            .ForMember(dest => dest.ReceivedByName, opt => opt.MapFrom(src => src.ReceivedBy != null ? src.ReceivedBy.FullName : null));
+
+        // Batch mappings
+        CreateMap<Batch, BatchDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.VendorName, opt => opt.MapFrom(src => src.Vendor != null ? src.Vendor.Name : null))
+            .ForMember(dest => dest.PurchaseOrderNumber, opt => opt.MapFrom(src => src.PurchaseOrder != null ? src.PurchaseOrder.OrderNumber : null))
+            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.RecalledByName, opt => opt.MapFrom(src => src.RecalledBy != null ? src.RecalledBy.FullName : null));
+
+        // SerialNumber mappings
+        CreateMap<SerialNumber, SerialNumberDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.BatchNumber, opt => opt.MapFrom(src => src.Batch != null ? src.Batch.BatchNumber : null))
+            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName : null))
+            .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.Order != null ? src.Order.OrderNumber : null));
+
+        // SerialNumberHistory mappings
+        CreateMap<SerialNumberHistory, SerialNumberHistoryDto>()
+            .ForMember(dest => dest.ActionName, opt => opt.MapFrom(src => src.Action.ToString()))
+            .ForMember(dest => dest.PerformedByName, opt => opt.MapFrom(src => src.PerformedBy != null ? src.PerformedBy.FullName : null));
+
+        // StockAlert mappings
+        CreateMap<StockAlert, StockAlertDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+            .ForMember(dest => dest.AlertTypeName, opt => opt.MapFrom(src => src.AlertType.ToString()))
+            .ForMember(dest => dest.SeverityName, opt => opt.MapFrom(src => src.Severity.ToString()))
+            .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.AcknowledgedByName, opt => opt.MapFrom(src => src.AcknowledgedBy != null ? src.AcknowledgedBy.FullName : null))
+            .ForMember(dest => dest.ResolvedByName, opt => opt.MapFrom(src => src.ResolvedBy != null ? src.ResolvedBy.FullName : null));
+
+        // InventoryValuation mappings
+        CreateMap<InventoryValuation, InventoryValuationDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductSKU, opt => opt.MapFrom(src => src.Product != null ? src.Product.SKU : string.Empty))
+            .ForMember(dest => dest.MethodName, opt => opt.MapFrom(src => src.Method.ToString()));
+
+        // InventoryValuationLayer mappings
+        CreateMap<InventoryValuationLayer, InventoryValuationLayerDto>();
     }
 }

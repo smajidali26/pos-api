@@ -35,6 +35,32 @@ public class PosDbContext : DbContext
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
 
+    // Inventory Management entities
+    public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
+    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<ProductLocation> ProductLocations => Set<ProductLocation>();
+    public DbSet<StockCount> StockCounts => Set<StockCount>();
+    public DbSet<StockCountItem> StockCountItems => Set<StockCountItem>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
+    public DbSet<StockAlert> StockAlerts => Set<StockAlert>();
+
+    // Batch/Lot Tracking entities
+    public DbSet<Batch> Batches => Set<Batch>();
+    public DbSet<BatchMovement> BatchMovements => Set<BatchMovement>();
+
+    // Serial Number Tracking entities
+    public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
+    public DbSet<SerialNumberHistory> SerialNumberHistories => Set<SerialNumberHistory>();
+
+    // Inventory Valuation entities
+    public DbSet<InventoryValuation> InventoryValuations => Set<InventoryValuation>();
+    public DbSet<InventoryValuationLayer> InventoryValuationLayers => Set<InventoryValuationLayer>();
+
+    // Store Management entities
+    public DbSet<Store> Stores => Set<Store>();
+    public DbSet<StoreUser> StoreUsers => Set<StoreUser>();
+    public DbSet<StoreProduct> StoreProducts => Set<StoreProduct>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
